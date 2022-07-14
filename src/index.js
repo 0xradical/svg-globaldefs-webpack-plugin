@@ -234,17 +234,24 @@ module.exports = class SVGGlobalDefsWebpackPlugin {
     compiler.hooks.emit.tapAsync(
       "SVGGlobalDefsWebpackPlugin",
       (compilation, callback) => {
-        for (let i = 0; i < this.files.length; i++) {
-          const file = this.files[i];
+        compilation.hooks.processAssets.tap(
+          {
+            name: 'SVGGlobalDefs',
+            stage: compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
+            additionalAssets: true
+          },
+          (assets) => {
+            for (let i in assets) {
+              const asset = compilation.getAsset(i);
+              const contents = asset.source.source();
 
-          if (compilation.assets[file]) {
-            const originalSource = compilation.assets[file].source();
-            const transformedSource = new RawSource(
-              this.transform(originalSource)
-            );
-            compilation.assets[file] = transformedSource;
+              compilation.updateAsset(
+                i,
+                new RawSource(this.transform(contents))
+              );
+            }
           }
-        }
+        );
 
         callback();
       }
